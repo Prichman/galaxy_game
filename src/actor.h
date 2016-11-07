@@ -27,7 +27,6 @@ class Actor : public sf::Drawable {
 
   sf::Vector2f speed_;
 
- private:
   sf::Sprite  sprite_;
   sf::Texture texture_;
 };
