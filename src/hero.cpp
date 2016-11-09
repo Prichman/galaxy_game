@@ -6,10 +6,10 @@ static const int livesCount = 3;
 static const int restoreTime = 500;
 static const int dt = 16;
 
-Hero::Hero():
- lives_count_(livesCount),
- score_(0),
- restore_(false) {
+Hero::Hero()
+    : lives_count_(livesCount),
+      score_(0),
+      restore_(false) {
    LoadSprite("resources/hero.png");
 }
 
@@ -46,9 +46,9 @@ sf::Uint32 Hero::GetScore() const {
 
 void Hero::Die() {
   SubLife();
-  if (lives_count_ > 0)
+  if (lives_count_ > 0) {
     Revive();
-  else {
+  } else {
     // TODO: add ending.
   }
 }
@@ -58,12 +58,16 @@ bool Hero::isResurrecting() const {
 }
 
 
-
 void Hero::SubLife() {
   --lives_count_;
 }
 
 void Hero::Revive() {
   restore_time_ = restoreTime;
-  restore_ = true;
+  restore_      = true;
+}
+
+void Hero::LoadAdditionalSprite() {
+  trans_texture_.loadFromFile("hero2.png");
+  trans_sprite_.setTexture(trans_texture_);
 }

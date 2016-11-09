@@ -10,7 +10,7 @@ enum GameEventType {
 
 class GameEvent {
  public:
-  GameEvent(GameEventType type, Actor * parent);
+  GameEvent(GameEventType type, Actor *parent);
 
   GameEventType GetType() const;
   Actor *GetParent();

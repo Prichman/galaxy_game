@@ -14,6 +14,7 @@ class EnemiesLine : public Actor {
   virtual void GameUpdate() override;
 
   float GetBottom() const;
+  bool KillEnemy(sf::IntRect bullet_rect);
 
  protected:
   void draw(sf::RenderTarget &target, sf::RenderStates states) const override;
@@ -26,4 +27,7 @@ class EnemiesLine : public Actor {
   float bottom_;
   unsigned int vertical_ticker_;
   bool up;
+
+  int left_enemy_;
+  int right_enemy_;
 };

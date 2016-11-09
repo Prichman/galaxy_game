@@ -21,11 +21,14 @@ class Hero : public AttackActor {
   void SubLife();
   void Revive();
 
+  void LoadAdditionalSprite();
+
   sf::Uint32 lives_count_;
   sf::Uint32 score_;
 
   bool restore_;
   int restore_time_;
 
-  // TODO: test changing color.
+  sf::Sprite  trans_sprite_;
+  sf::Texture trans_texture_;
 };

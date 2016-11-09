@@ -6,11 +6,11 @@ Enemy::Enemy(int row, int pos_num) {
   sf::Vector2f starting_pos;
  
   // TODO: change if need.
-  float left_margin = 40;
-  float enemy_size  = 12;
-  float hspace      = 5;
-  float vspace      = 10;
-  float top_margin  = vspace;
+  const float left_margin = 40;
+  const float enemy_size  = 12;
+  const float hspace      = 30;
+  const float vspace      = 20;
+  const float top_margin  = vspace;
   
   starting_pos.x = left_margin + (enemy_size + hspace) * pos_num;
   starting_pos.y = top_margin + (enemy_size + vspace) * row;

@@ -5,6 +5,7 @@
 #include <set>
 
 #include "actor.h"
+#include "enemies_line.h"
 #include "hero.h"
 
 class Actor;
@@ -36,6 +37,8 @@ class GameManager {
 
   sf::RenderWindow main_window_;
 
+  bool running_;
+
   sf::Sprite  background_;
   sf::Texture background_texture_;
 
@@ -45,5 +48,6 @@ class GameManager {
   std::set<Bullet *>  enemies_bullets_;
   std::set<Bullet *>  hero_bullets_;
   std::set<Actor *>   actors_;
+  EnemiesLine         enemies_line_;
   Hero                hero_;
 };
