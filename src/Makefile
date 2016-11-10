@@ -19,8 +19,10 @@ enemies_line.o : enemy.h game_event.h game_event_manager.h storage.h
 
 game_event.o : actor.h
 
-game_manager.o : actor.h bullet.h keyboard.h game_event_manager.h \
-								 game_event.h 
+enemy.o : storage.h
+
+game_manager.o : actor.h bullet.h enemy.h keyboard.h game_event_manager.h \
+								 game_event.h storage.h
 
 main.o : game_manager.h
 

@@ -2,8 +2,6 @@
 
 #include <SFML/Graphics.hpp>
 
-#include <set>
-
 #include "actor.h"
 #include "enemies_line.h"
 #include "hero.h"
@@ -28,8 +26,6 @@ class GameManager {
   void FindCollisions();
   
   void LoadBackground();
-  void CreatePlayer();
-  void CreateEnemies();
 
   void DrawBackground();
   void DrawActors();
@@ -45,9 +41,8 @@ class GameManager {
   sf::Clock clock_;
   sf::Time  elapsed_;
 
-  std::set<Bullet *>  enemies_bullets_;
-  std::set<Bullet *>  hero_bullets_;
-  std::set<Actor *>   actors_;
+  std::vector<Bullet *>  enemies_bullets_;
+  std::vector<Bullet *>  hero_bullets_;
   EnemiesLine         enemies_line_;
   Hero                hero_;
 };

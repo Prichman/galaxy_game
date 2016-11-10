@@ -2,19 +2,15 @@
 
 #include <string>
 
+#include "storage.h"
+
 Enemy::Enemy(int row, int pos_num) {
   sf::Vector2f starting_pos;
- 
-  // TODO: change if need.
-  const float left_margin = 40;
-  const float enemy_size  = 12;
-  const float hspace      = 30;
-  const float vspace      = 20;
-  const float top_margin  = vspace;
   
-  starting_pos.x = left_margin + (enemy_size + hspace) * pos_num;
-  starting_pos.y = top_margin + (enemy_size + vspace) * row;
-
+  starting_pos.x = theStorage.hmargin() + 
+      (theStorage.enemy_size() + theStorage.hspace()) * pos_num;
+  starting_pos.y = theStorage.vmargin() +
+      (theStorage.enemy_size() + theStorage.vspace()) * row;
 
   std::string path_prefix = "resources/enemy_",
               path_num = std::to_string(1), // TODO: change 1 to row

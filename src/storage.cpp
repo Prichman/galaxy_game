@@ -10,13 +10,13 @@ Storage &Storage::GetInstance() {
 }
   
 Storage::Storage()
-    : hmargin_(20),
-      vmargin_(20),
-      enemy_size_(12),
+    : hmargin_(160),
+      vmargin_(30),
+      enemy_size_(30),
       hspace_(20),
       vspace_(20),
-      enemy_hspeed_(2) {
-  
+      enemy_hspeed_(5.f / 16.f) {
+  // TODO: test the constants  
 }
 
 int Storage::hmargin() const {

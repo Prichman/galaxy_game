@@ -1,11 +1,15 @@
 #include "game_manager.h"
 
+#include <cstdlib>
+
 #include "actor.h"
 #include "bullet.h"
+#include "enemy.h"
 
 #include "keyboard.h"
 #include "game_event_manager.h"
 #include "game_event.h"
+#include "storage.h"
 
 static const int FPS_SEC      = 16;
 static const int windowWidth  = 800;
@@ -19,10 +23,9 @@ GameManager::GameManager()
   // Initialize
   theKeyboard;
   theEventManager;
+  theStorage;
 
   LoadBackground();
-  CreatePlayer();
-  CreateEnemies();
 }
 
 void GameManager::StartGame() {
@@ -82,27 +85,57 @@ void GameManager::GameUpdate() {
 
   }
 
-  for (auto it = actors_.begin(); it != actors_.end(); ++it) {
+  // Update all actors.
+  hero_.GameUpdate();
+  enemies_line_.GameUpdate();
+  for (auto it = hero_bullets_.begin(); it != hero_bullets_.end(); ++it) {
+    (*it)->GameUpdate();
+  }
+  for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it) {
     (*it)->GameUpdate();
   }
 
-
   // Collision phase.
+  FindCollisions();
 
   // Game events phase.
-  GameEvent *game_event;
+  // TODO: !!!
+  GameEvent *game_event = nullptr;
   while ((game_event = theEventManager.GetEvent()) != nullptr) {
     switch (game_event->GetType()) {
-      case ATTACK:
+      case ATTACK: {
         // Create bullet.
+        Bullet *bullet = new Bullet;
+
+        sf::IntRect hero_rect = hero_.GetIntRect();
+        float bullet_x = hero_rect.left + hero_rect.width / 2;
+        float bullet_y = hero_rect.top + hero_rect.height +
+                         bullet->GetIntRect().height;
+        bullet->SetPos(bullet_x, bullet_y);
         break;
-      case KILL:
+      }
+      case KILL: {
         // Remove player or enemy and bullet.
+        Actor *parent = game_event->GetParent();
+        if (dynamic_cast<Enemy *>(parent) == nullptr) {
+          // Collision 2, hero and enemy's bullet.
+          hero_.Die();
+        } else {
+          // Collision 1, enemy and hero's bullet.
+          int killing_score = 100; // TODO: change to const.
+          hero_.AddScore(killing_score);
+        }
         break;
-      case DEATH:
-        // Remove buller.
+      }
+      case DEATH: {
+        // Bullet is out of screen.
+        Bullet *bullet = dynamic_cast<Bullet *>(game_event->GetParent());
+        delete bullet;
         break;
+      }
     }
+    delete game_event;
+    game_event = nullptr;
   }
 }
 
@@ -123,9 +156,17 @@ void GameManager::FindCollisions() {
     sf::IntRect bullet_rect = (*it)->GetIntRect();
     if (bullet_rect.top >= enemies_line_.GetBottom()) {
       if (enemies_line_.KillEnemy(bullet_rect)) {
-        // TODO: add score and remove bullet from set.
-        break;
+        delete *it;
+        *it = nullptr;
       }
+    }
+  }
+
+  // Remove empty bullets.
+  for (int i = 0, n = hero_bullets_.size(); i < n; ++i) {
+    if (hero_bullets_[i] == nullptr) {
+      hero_bullets_.erase(hero_bullets_.begin() + i);
+      --i;
     }
   }
 
@@ -136,23 +177,22 @@ void GameManager::FindCollisions() {
     if (hero_rect.intersects(enemy_rect)) {
       GameEvent *event = new GameEvent(KILL, &hero_);
       theEventManager.PushEvent(event);
+      
+      delete *it;
+      *it = nullptr;
+      enemies_bullets_.erase(it);
+
       break;
     }
   }  
 }
 
 void GameManager::LoadBackground() {
-  // TESTME: --
-  background_texture_.loadFromFile("resources/background.png");
+  if (!background_texture_.loadFromFile("resources/background.png")) {
+    printf("Can't load background file\n");
+    exit(1);
+  }
   background_.setTexture(background_texture_);
-}
-
-void GameManager::CreatePlayer() {
-  // TODO: 
-}
-
-void GameManager::CreateEnemies() {
-
 }
 
 void GameManager::DrawBackground() {
@@ -160,10 +200,8 @@ void GameManager::DrawBackground() {
 }
 
 void GameManager::DrawActors() {
-  for (auto it = actors_.begin(); it != actors_.end(); ++it) {
-    main_window_.draw(**it);
-  }
   main_window_.draw(hero_);
+  main_window_.draw(enemies_line_);
   for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it)
     main_window_.draw(**it);
   for (auto it = hero_bullets_.begin(); it != hero_bullets_.end(); ++it)
@@ -171,5 +209,5 @@ void GameManager::DrawActors() {
 }
 
 void GameManager::DrawGui() {
-
+  // TODO: 
 }
