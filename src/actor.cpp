@@ -22,6 +22,10 @@ void Actor::SetSpeed(float x, float y) {
   speed_.y = y;
 }
 
+sf::Vector2f Actor::GetSpeed() const {
+  return speed_;
+}
+
 void Actor::SetPos(float x, float y) {
   sprite_.setPosition(x, y);
 }

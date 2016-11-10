@@ -21,6 +21,7 @@ class EnemiesLine : public Actor {
 
  private:
   void CreateEnemies();
+  void CheckBorders();
   
   std::vector<std::vector<Enemy *>> enemies_;
 

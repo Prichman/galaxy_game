@@ -10,7 +10,7 @@ Keyboard::Keyboard():
   should_attack_(false)
 {}
 
-static Keyboard &Keyboard::GetInstance() {
+Keyboard &Keyboard::GetInstance() {
   if (_keyboard == nullptr)
     _keyboard = new Keyboard;
 

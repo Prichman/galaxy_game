@@ -20,6 +20,7 @@ class Actor : public sf::Drawable {
   sf::Vector2f GetPos() const;
 
   void SetSpeed(float x, float y);
+  sf::Vector2f GetSpeed() const;
   sf::IntRect GetIntRect() const;
 
  protected:

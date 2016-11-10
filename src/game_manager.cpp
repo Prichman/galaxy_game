@@ -7,8 +7,6 @@
 #include "game_event_manager.h"
 #include "game_event.h"
 
-#include "info.h"
-
 static const int FPS_SEC      = 16;
 static const int windowWidth  = 800;
 static const int windowHeight = 600;
