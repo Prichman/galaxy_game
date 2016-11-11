@@ -4,11 +4,7 @@
 
 Keyboard *Keyboard::_keyboard = nullptr;
 
-Keyboard::Keyboard():
-  should_left_  (false),
-  should_right_ (false),
-  should_attack_(false)
-{}
+Keyboard::Keyboard() : current_action_(ACT_NO) {}
 
 Keyboard &Keyboard::GetInstance() {
   if (_keyboard == nullptr)
@@ -20,32 +16,28 @@ Keyboard &Keyboard::GetInstance() {
 
 void Keyboard::HandleKeyPress() {
   if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {
-      should_left_ = true;
+    current_action_ = ACT_MOVE_LEFT;
   } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
-      should_right_ = true;
+    current_action_ = ACT_MOVE_RIGHT;
   } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
-      should_attack_ = true;
-  } 
-}
-
-void Keyboard::HandleKeyRelease() {
-  if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {
-      should_left_ = false;
-  } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
-      should_right_ = false;
-  } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
-      should_attack_ = false;
+    current_action_ = ACT_ATTACK;
+  } else {
+    current_action_ = ACT_NO;
   }
 }
 
+void Keyboard::HandleKeyRelease() {
+  current_action_ = ACT_NO;
+}
+
 bool Keyboard::ShouldAttack() const {
-  return should_attack_;
+  return current_action_ == ACT_ATTACK;
 }
 
 bool Keyboard::ShouldMoveLeft()  const {
-  return should_left_;
+  return current_action_ == ACT_MOVE_LEFT;
 }
 
 bool Keyboard::ShouldMoveRight() const {
-  return should_right_;
+  return current_action_ == ACT_MOVE_RIGHT;
 }

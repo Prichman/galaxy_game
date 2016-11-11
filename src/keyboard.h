@@ -4,6 +4,13 @@
 
 #define theKeyboard Keyboard::GetInstance()
 
+enum Action {
+  ACT_NO,
+  ACT_MOVE_LEFT,
+  ACT_MOVE_RIGHT,
+  ACT_ATTACK
+};
+
 class Keyboard {
  public:
   static Keyboard &GetInstance();
@@ -21,7 +28,5 @@ class Keyboard {
  private:
   static Keyboard *_keyboard;
 
-  bool should_left_;
-  bool should_right_;
-  bool should_attack_;
+  Action current_action_;
 };
