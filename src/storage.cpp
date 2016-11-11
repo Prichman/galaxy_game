@@ -15,7 +15,10 @@ Storage::Storage()
       enemy_size_(30),
       hspace_(20),
       vspace_(20),
-      enemy_hspeed_(5.f / 16.f) {
+      enemy_hspeed_(5.f / 16.f),
+      bullet_vspeed_(0.5f),
+      screen_width_(800),
+      screen_height_(600) {
   // TODO: test the constants  
 }
 
@@ -39,6 +42,18 @@ int Storage::vspace() const {
   return vspace_;
 }
   
-int Storage::enemy_hspeed() const {
+float Storage::enemy_hspeed() const {
   return enemy_hspeed_;
+}
+
+float Storage::bullet_vspeed() const {
+  return bullet_vspeed_;
+}
+
+int Storage::screen_width() const {
+  return screen_width_;
+}
+
+int Storage::screen_height() const {
+  return screen_height_;
 }

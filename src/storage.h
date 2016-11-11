@@ -12,7 +12,11 @@ class Storage {
   int hspace()        const;
   int vspace()        const;
   
-  int enemy_hspeed()  const;
+  float enemy_hspeed()  const;
+  float bullet_vspeed() const;
+
+  int screen_width() const;
+  int screen_height() const;
   
  protected: 
   Storage();
@@ -26,5 +30,9 @@ class Storage {
   int hspace_;
   int vspace_;
 
-  int enemy_hspeed_;
+  float enemy_hspeed_;
+  float bullet_vspeed_;
+
+  int screen_width_;
+  int screen_height_;
 };
