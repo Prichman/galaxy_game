@@ -21,13 +21,18 @@ class EnemiesLine : public Actor {
 
  private:
   void CreateEnemies();
+  
   void CheckBorders();
+  bool CanMove();
+  Enemy *FindLeft();
+  Enemy *FindRight();
   
   std::vector<std::vector<Enemy *>> enemies_;
 
   float bottom_;
   unsigned int vertical_ticker_;
   bool up;
+  bool moving_left_;
 
   int left_enemy_;
   int right_enemy_;

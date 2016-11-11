@@ -11,9 +11,11 @@ static const int columnCount  = 10;
 
 EnemiesLine::EnemiesLine()
     : vertical_ticker_(0),
-      up(true) {  
+      up(true),
+      moving_left_(true) {  
   bottom_ = theStorage.vmargin() - theStorage.hspace() +
       (theStorage.enemy_size() + theStorage.hspace()) * 3;
+  CreateEnemies();
 }
 
 EnemiesLine::~EnemiesLine() {
@@ -27,6 +29,8 @@ EnemiesLine::~EnemiesLine() {
 }
 
 void EnemiesLine::GameUpdate() {
+  return; // TODO: remove after first test.
+
   ++vertical_ticker_;
 
   // Check if need vertical move.
@@ -50,6 +54,20 @@ void EnemiesLine::GameUpdate() {
   // Usual update.
   // Common behavior.
   
+  // Check out of 
+  if (!CanMove()) {
+    float enemy_speed = theStorage.enemy_hspeed();
+    // Check prev direction of move.
+    if (!moving_left_)
+      enemy_speed = -enemy_speed;
+    moving_left_ = !moving_left_;
+    for (int i = 0; i < rowCount; ++i) {
+      for (int j = left_enemy_; j < right_enemy_; ++j)
+        if (enemies_[i][j] != nullptr) {
+          enemies_[i][j]->SetSpeed(enemy_speed, 0);
+        }
+    }
+  }
   
   for (int i = 0; i < rowCount; ++i) {
     for (int j = left_enemy_; j < right_enemy_; ++j) {
@@ -138,4 +156,40 @@ void EnemiesLine::CheckBorders() {
   if (left > right) {
     // TODO: end of game.
   }
+}
+
+bool EnemiesLine::CanMove() {
+  return true;
+
+  if (moving_left_) {
+    Enemy *left_enemy = FindLeft();
+    if (left_enemy != nullptr) {
+      if (left_enemy->GetPos().x < theStorage.hmargin())
+        return false;
+    }
+  } else {
+    Enemy *right_enemy = FindLeft();
+    if (right_enemy != nullptr) {
+      if (right_enemy->GetPos().x > 
+          theStorage.screen_width() - theStorage.hmargin())
+        return false;
+    }
+  }
+}
+
+
+Enemy *EnemiesLine::FindLeft() {
+  for (int i = 0; i < rowCount; ++i) {
+    if (enemies_[i][left_enemy_] != nullptr)
+      return enemies_[i][left_enemy_];
+  }
+  return nullptr;
+}
+
+Enemy *EnemiesLine::FindRight() {
+  for (int i = 0; i < rowCount; ++i) {
+    if (enemies_[i][right_enemy_] != nullptr)
+      return enemies_[i][right_enemy_];
+  }
+  return nullptr;
 }

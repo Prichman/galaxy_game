@@ -1,15 +1,19 @@
 #include "actor.h"
 
-Actor::Actor():
-  speed_(0, 0)
-{}
+#include <iostream>
+
+Actor::Actor()
+    : speed_(0, 0) {}
 
 Actor::~Actor() {
 
 }
 
 void Actor::LoadSprite(const std::string & path) {
-  texture_.loadFromFile(path);
+  if(!texture_.loadFromFile(path)) {
+    std::cout << "Can't load texture from \"" << path << "\"" << std::endl;
+    return;
+  }
   sprite_.setTexture(texture_);
 }
 

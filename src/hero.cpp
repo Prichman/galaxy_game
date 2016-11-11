@@ -1,6 +1,9 @@
 #include "hero.h"
 
+#include <iostream>
 #include <string>
+
+#include "storage.h"
 
 static const int livesCount = 3;
 static const int restoreTime = 500;
@@ -10,7 +13,11 @@ Hero::Hero()
     : lives_count_(livesCount),
       score_(0),
       restore_(false) {
-   LoadSprite("resources/hero.png");
+   LoadSprite("resources/hero_1.png");
+   LoadAdditionalSprite();
+
+   SetPos((theStorage.screen_width() - GetIntRect().width) / 2,
+          theStorage.screen_height() - theStorage.vmargin());
 }
 
 void Hero::GameUpdate() {
@@ -26,6 +33,7 @@ void Hero::GameUpdate() {
   }
   
   AttackActor::GameUpdate();
+  SetSpeed(0, 0);
 }
 
 void Hero::AddLife() {
@@ -68,6 +76,11 @@ void Hero::Revive() {
 }
 
 void Hero::LoadAdditionalSprite() {
-  trans_texture_.loadFromFile("hero2.png");
+  std::string trans_texture_path = "resources/hero_1_trans.png";
+  if (!trans_texture_.loadFromFile(trans_texture_path)) {
+    std::cout << "Can't load texture from \"" << trans_texture_path << "\"";
+    std::cout << std::endl;
+    return;
+  }
   trans_sprite_.setTexture(trans_texture_);
 }

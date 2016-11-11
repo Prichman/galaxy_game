@@ -24,12 +24,15 @@ class GameManager {
 
  private:
   void FindCollisions();
+  void HandleGameEvents();
   
   void LoadBackground();
 
   void DrawBackground();
   void DrawActors();
   void DrawGui();
+
+  void CloseMainWindow();
 
   sf::RenderWindow main_window_;
 
@@ -41,8 +44,8 @@ class GameManager {
   sf::Clock clock_;
   sf::Time  elapsed_;
 
-  std::vector<Bullet *>  enemies_bullets_;
-  std::vector<Bullet *>  hero_bullets_;
-  EnemiesLine         enemies_line_;
-  Hero                hero_;
+  std::vector<Bullet *> enemies_bullets_;
+  std::vector<Bullet *> hero_bullets_;
+  EnemiesLine           enemies_line_;
+  Hero                  hero_;
 };

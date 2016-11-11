@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 
+#include <iostream>
+
 #include "actor.h"
 #include "bullet.h"
 #include "enemy.h"
@@ -12,12 +14,11 @@
 #include "storage.h"
 
 static const int FPS_SEC      = 16;
-static const int windowWidth  = 800;
-static const int windowHeight = 600;
 
 GameManager::GameManager()
     : running_(false) {
-  main_window_.create(sf::VideoMode(windowWidth, windowHeight), "Galaxy game",
+  main_window_.create(sf::VideoMode(theStorage.screen_width(),
+                      theStorage.screen_height()), "Galaxy game",
                       sf::Style::Close);
 
   // Initialize
@@ -34,6 +35,7 @@ void GameManager::StartGame() {
   clock_.restart();
   running_ = true;
 
+  std::cout << "Game started" << std::endl;
   while (running_) {
     elapsed_ = clock_.restart();
 
@@ -60,10 +62,11 @@ void GameManager::HandleEvents() {
   while (main_window_.pollEvent(event)) {
     switch (event.type) {
       case sf::Event::Closed:
-        running_ = false;
-        main_window_.close();
+        CloseMainWindow();
         break;
       case sf::Event::KeyPressed:
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape))
+          CloseMainWindow();
         theKeyboard.HandleKeyPress();
         break;
       case sf::Event::KeyReleased:
@@ -77,12 +80,14 @@ void GameManager::HandleEvents() {
 
 void GameManager::GameUpdate() {
   // Move phase
+  // TODO: change digits to const.
   if (theKeyboard.ShouldMoveLeft()) {
-
+    hero_.SetSpeed(-0.8, 0);
   } else if (theKeyboard.ShouldMoveRight()) {
-
+    hero_.SetSpeed(0.8, 0);
   } else if (theKeyboard.ShouldAttack()) {
-
+    GameEvent *event = new GameEvent(ATTACK, &hero_);
+    theEventManager.PushEvent(event);
   }
 
   // Update all actors.
@@ -96,53 +101,21 @@ void GameManager::GameUpdate() {
   }
 
   // Collision phase.
+  // If found create event and remove bullet.
   FindCollisions();
 
   // Game events phase.
-  // TODO: !!!
-  GameEvent *game_event = nullptr;
-  while ((game_event = theEventManager.GetEvent()) != nullptr) {
-    switch (game_event->GetType()) {
-      case ATTACK: {
-        // Create bullet.
-        Bullet *bullet = new Bullet;
-
-        sf::IntRect hero_rect = hero_.GetIntRect();
-        float bullet_x = hero_rect.left + hero_rect.width / 2;
-        float bullet_y = hero_rect.top + hero_rect.height +
-                         bullet->GetIntRect().height;
-        bullet->SetPos(bullet_x, bullet_y);
-        break;
-      }
-      case KILL: {
-        // Remove player or enemy and bullet.
-        Actor *parent = game_event->GetParent();
-        if (dynamic_cast<Enemy *>(parent) == nullptr) {
-          // Collision 2, hero and enemy's bullet.
-          hero_.Die();
-        } else {
-          // Collision 1, enemy and hero's bullet.
-          int killing_score = 100; // TODO: change to const.
-          hero_.AddScore(killing_score);
-        }
-        break;
-      }
-      case DEATH: {
-        // Bullet is out of screen.
-        Bullet *bullet = dynamic_cast<Bullet *>(game_event->GetParent());
-        delete bullet;
-        break;
-      }
-    }
-    delete game_event;
-    game_event = nullptr;
-  }
+  HandleGameEvents(); 
 }
 
 void GameManager::Render() {
+  main_window_.clear();
+  
   DrawBackground();
   DrawActors();
   DrawGui();
+
+  main_window_.display();
 }
 
 
@@ -187,6 +160,63 @@ void GameManager::FindCollisions() {
   }  
 }
 
+void GameManager::HandleGameEvents() {
+  GameEvent *game_event = nullptr;
+  while ((game_event = theEventManager.GetEvent()) != nullptr) {
+    switch (game_event->GetType()) {
+      case ATTACK: {
+        // Create bullet.
+        std::cout << "Someone attacks" << std::endl;
+        sf::IntRect actor_rect = game_event->GetParent()->GetIntRect(); 
+        bool is_enemy = (dynamic_cast<Hero *>(game_event->GetParent()) ==
+                         nullptr);
+        std::cout << "This one is " << (is_enemy ? "enemy" : "hero");
+        std::cout << std::endl;
+        Bullet *bullet = new Bullet(actor_rect, is_enemy);
+        if (is_enemy) {
+          enemies_bullets_.push_back(bullet);
+        } else {
+          hero_bullets_.push_back(bullet);
+        }
+        break;
+      }
+      case KILL: {
+        // Remove player or enemy.
+        Actor *parent = game_event->GetParent();
+        if (dynamic_cast<Enemy *>(parent) == nullptr) {
+          // Collision 2, hero and enemy's bullet.
+          hero_.Die();
+        } else {
+          // Collision 1, enemy and hero's bullet.
+          int killing_score = 100; // TODO: change to const.
+          hero_.AddScore(killing_score);
+        }
+        break;
+      }
+      case DEATH: {
+        // Bullet is out of screen.
+        Bullet *bullet = dynamic_cast<Bullet *>(game_event->GetParent());
+        std::vector<Bullet *> *bullets; // for needed container.
+        if (bullet->hero()) {
+          bullets = &hero_bullets_;
+
+        } else {
+          bullets = &enemies_bullets_;
+        }
+        auto bul_it = std::find(bullets->begin(), bullets->end(),
+                                 bullet);
+        if (bul_it != bullets->end())
+          bullets->erase(bul_it);
+
+        delete bullet;
+        break;
+      }
+    }
+    delete game_event;
+    game_event = nullptr;
+  }
+}
+
 void GameManager::LoadBackground() {
   if (!background_texture_.loadFromFile("resources/background.png")) {
     printf("Can't load background file\n");
@@ -210,4 +240,11 @@ void GameManager::DrawActors() {
 
 void GameManager::DrawGui() {
   // TODO: 
+}
+
+
+void GameManager::CloseMainWindow() {
+  main_window_.close();
+  running_ = false;
+  std::cout << "Game ended" << std::endl;
 }
