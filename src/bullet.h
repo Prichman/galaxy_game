@@ -4,12 +4,12 @@
 
 class Bullet : public Actor {
  public:
-  Bullet(const sf::IntRect &actor_rect, bool is_enemy);
+  Bullet(const sf::FloatRect &actor_rect, Actor *parent);
 
   void GameUpdate() override;
 
-  bool hero() const;
+  Actor *parent();
 
  private:
-  bool hero_;
+  Actor *parent_;
 };

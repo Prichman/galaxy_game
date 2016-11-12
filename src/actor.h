@@ -22,6 +22,7 @@ class Actor : public sf::Drawable {
   void SetSpeed(float x, float y);
   sf::Vector2f GetSpeed() const;
   sf::IntRect GetIntRect() const;
+  sf::FloatRect bounding_rect() const;
 
  protected:
   void draw(sf::RenderTarget &target, sf::RenderStates states) const override;

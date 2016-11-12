@@ -7,4 +7,6 @@ class Enemy : public AttackActor {
   
  public:
   Enemy(int row, int pos_num);
+
+  void GameUpdate() override;
 };

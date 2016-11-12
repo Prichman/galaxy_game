@@ -2,16 +2,15 @@
 
 #include "actor.h"
 
-GameEvent::GameEvent(GameEventType type, Actor * parent):
-  type_(type),
-  parent_(parent) {}
+GameEvent::GameEvent(GameEventType type, Actor *parent)
+  : type_(type),
+    parent_(parent) {}
 
 
-
-GameEventType GameEvent::GetType() const {
+GameEventType GameEvent::type() const {
   return type_;
 }
 
-Actor *GameEvent::GetParent() {
+Actor *GameEvent::parent() {
   return parent_;
 }

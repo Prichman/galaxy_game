@@ -21,4 +21,13 @@ Enemy::Enemy(int row, int pos_num) {
   LoadSprite(path);
 
   SetPos(starting_pos.x, starting_pos.y);
+  SetSpeed(-theStorage.enemy_hspeed(), 0);
+}
+
+
+void Enemy::GameUpdate() {
+  AttackActor::GameUpdate();
+
+  if (speed_.y != 0)
+    speed_.y = 0;
 }

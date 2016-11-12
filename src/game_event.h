@@ -3,17 +3,17 @@
 class Actor;
 
 enum GameEventType {
-  ATTACK,
-  KILL,
-  DEATH
+  kAttack,
+  kKill,
+  kDeath
 };
 
 class GameEvent {
  public:
   GameEvent(GameEventType type, Actor *parent);
 
-  GameEventType GetType() const;
-  Actor *GetParent();
+  GameEventType type() const;
+  Actor *parent();
 
  private:
   GameEventType type_;

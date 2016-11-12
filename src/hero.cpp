@@ -16,7 +16,7 @@ Hero::Hero()
    LoadSprite("resources/hero_1.png");
    LoadAdditionalSprite();
 
-   SetPos((theStorage.screen_width() - GetIntRect().width) / 2,
+   SetPos((theStorage.screen_width() - bounding_rect().width) / 2,
           theStorage.screen_height() - theStorage.vmargin());
 }
 
@@ -32,7 +32,20 @@ void Hero::GameUpdate() {
     }
   }
   
-  AttackActor::GameUpdate();
+  sf::Vector2f pos = GetPos();
+
+
+  bool can_update = true;
+  if (speed_.x < 0 && pos.x <= 1)
+    can_update = false;
+
+  if (speed_.x > 0 &&
+           pos.x >= theStorage.screen_width() - bounding_rect().width - 1)
+    can_update = false;
+
+  if (can_update)
+    AttackActor::GameUpdate();
+
   SetSpeed(0, 0);
 }
 

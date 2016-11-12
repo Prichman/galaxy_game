@@ -4,18 +4,22 @@
 #include "game_event_manager.h"
 #include "storage.h"
 
-Bullet::Bullet(const sf::IntRect &actor_rect, bool is_enemy)
-    : hero_(!is_enemy) {
+Bullet::Bullet(const sf::FloatRect &actor_rect, Actor *parent)
+    : parent_(parent) {
   LoadSprite("resources/bullet.png");
 
   float x, y;
   float vspeed = theStorage.bullet_vspeed();
-  sf::IntRect own_rect = GetIntRect();
+  sf::FloatRect own_rect = bounding_rect();
   x = actor_rect.left + (actor_rect.width - own_rect.width) / 2;
-  if (is_enemy) {
-    y = actor_rect.top - actor_rect.height - own_rect.height;
+  // Check if parent is Enemy. Enemies are placed in 
+  // first height half of screen.
+  if (actor_rect.top < theStorage.screen_height() / 2) {
+    // Enemy.
+    y = actor_rect.top + actor_rect.height + own_rect.height;
   } else {
-    y = actor_rect.top + GetIntRect().height;
+    // Hero.
+    y = actor_rect.top - bounding_rect().height;
     vspeed = -vspeed;
   }
   SetPos(x, y);
@@ -29,11 +33,11 @@ void Bullet::GameUpdate() {
   // Check if bullet is out of screen.
   if (pos.y > theStorage.screen_height() ||
       pos.y < 0) {
-    GameEvent *event = new GameEvent(DEATH, static_cast<Actor *>(this));
+    GameEvent *event = new GameEvent(kDeath, static_cast<Actor *>(this));
     theEventManager.PushEvent(event);
   }
 }
 
-bool Bullet::hero() const {
-  return hero_;
+Actor *Bullet::parent() {
+  return parent_;
 }

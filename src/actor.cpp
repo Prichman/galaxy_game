@@ -38,8 +38,8 @@ sf::Vector2f Actor::GetPos() const {
   return sprite_.getPosition();
 }
 
-sf::IntRect Actor::GetIntRect() const {
-  return sprite_.getTextureRect();
+sf::FloatRect Actor::bounding_rect() const {
+  return sprite_.getGlobalBounds();
 }
 
 

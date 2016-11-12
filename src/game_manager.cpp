@@ -1,19 +1,21 @@
 #include "game_manager.h"
 
 #include <cstdlib>
+#include <ctime>
 
 #include <iostream>
 
 #include "actor.h"
 #include "bullet.h"
+#include "enemy_bullet.h"
 #include "enemy.h"
-
-#include "keyboard.h"
-#include "game_event_manager.h"
 #include "game_event.h"
+#include "game_event_manager.h"
+#include "keyboard.h"
 #include "storage.h"
 
-static const int FPS_SEC      = 16;
+static const int kFpsSec = 16;
+static const int kKillScore = 100;
 
 GameManager::GameManager()
     : running_(false) {
@@ -26,12 +28,14 @@ GameManager::GameManager()
   theEventManager;
   theStorage;
 
+  srand(time(NULL));
+
   LoadBackground();
 }
 
 void GameManager::StartGame() {
   sf::Time sleep_time;
-  const sf::Time fps_step = sf::milliseconds(FPS_SEC);
+  const sf::Time fps_step = sf::milliseconds(kFpsSec);
   clock_.restart();
   running_ = true;
 
@@ -81,13 +85,13 @@ void GameManager::HandleEvents() {
 void GameManager::GameUpdate() {
   // Move phase
   // TODO: change digits to const.
+  const float hero_hspeed = 2.f;
   if (theKeyboard.ShouldMoveLeft()) {
-    hero_.SetSpeed(-0.8, 0);
+    hero_.SetSpeed(-hero_hspeed, 0);
   } else if (theKeyboard.ShouldMoveRight()) {
-    hero_.SetSpeed(0.8, 0);
+    hero_.SetSpeed(hero_hspeed, 0);
   } else if (theKeyboard.ShouldAttack()) {
-    GameEvent *event = new GameEvent(ATTACK, &hero_);
-    theEventManager.PushEvent(event);
+    hero_.Attack();
   }
 
   // Update all actors.
@@ -126,8 +130,8 @@ void GameManager::FindCollisions() {
 
   // 1. Enemy and hero's bullet.
   for (auto it = hero_bullets_.begin(); it != hero_bullets_.end(); ++it) {
-    sf::IntRect bullet_rect = (*it)->GetIntRect();
-    if (bullet_rect.top >= enemies_line_.GetBottom()) {
+    sf::FloatRect bullet_rect = (*it)->bounding_rect();
+    if (bullet_rect.top < enemies_line_.GetBottom()) {
       if (enemies_line_.KillEnemy(bullet_rect)) {
         delete *it;
         *it = nullptr;
@@ -140,17 +144,17 @@ void GameManager::FindCollisions() {
     if (hero_bullets_[i] == nullptr) {
       hero_bullets_.erase(hero_bullets_.begin() + i);
       --i;
+      --n;
     }
   }
 
   // 2. Hero and enemy's bullet.
-  sf::IntRect hero_rect = hero_.GetIntRect();
+  sf::FloatRect hero_rect = hero_.bounding_rect();
   for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it) {
-    sf::IntRect enemy_rect = (*it)->GetIntRect();
+    sf::FloatRect enemy_rect = (*it)->bounding_rect();
     if (hero_rect.intersects(enemy_rect)) {
-      GameEvent *event = new GameEvent(KILL, &hero_);
-      theEventManager.PushEvent(event);
-      
+      GameEvent *event = new GameEvent(kKill, &hero_);
+      theEventManager.PushEvent(event); 
       delete *it;
       *it = nullptr;
       enemies_bullets_.erase(it);
@@ -163,51 +167,59 @@ void GameManager::FindCollisions() {
 void GameManager::HandleGameEvents() {
   GameEvent *game_event = nullptr;
   while ((game_event = theEventManager.GetEvent()) != nullptr) {
-    switch (game_event->GetType()) {
-      case ATTACK: {
+    switch (game_event->type()) {
+      case kAttack: {
         // Create bullet.
-        std::cout << "Someone attacks" << std::endl;
-        sf::IntRect actor_rect = game_event->GetParent()->GetIntRect(); 
-        bool is_enemy = (dynamic_cast<Hero *>(game_event->GetParent()) ==
+        sf::FloatRect actor_rect = game_event->parent()->bounding_rect(); 
+        bool is_enemy = (dynamic_cast<Hero *>(game_event->parent()) ==
                          nullptr);
-        std::cout << "This one is " << (is_enemy ? "enemy" : "hero");
-        std::cout << std::endl;
-        Bullet *bullet = new Bullet(actor_rect, is_enemy);
         if (is_enemy) {
+          Enemy *enemy = dynamic_cast<Enemy *>(game_event->parent());
+          sf::Vector2i enemy_pos = enemies_line_.GetEnemyPos(enemy);
+          EnemyBullet *bullet = new EnemyBullet(actor_rect, enemy, enemy_pos);
           enemies_bullets_.push_back(bullet);
         } else {
+          Bullet *bullet = new Bullet(actor_rect, &hero_);
           hero_bullets_.push_back(bullet);
         }
         break;
       }
-      case KILL: {
+      case kKill: {
         // Remove player or enemy.
-        Actor *parent = game_event->GetParent();
-        if (dynamic_cast<Enemy *>(parent) == nullptr) {
+        Actor *parent = game_event->parent();
+        if (parent == nullptr || dynamic_cast<Hero *>(parent) == nullptr) {
+           // Collision 1, enemy and hero's bullet.
+          hero_.AddScore(kKillScore);
+          hero_.AllowFire();
+        } else {
           // Collision 2, hero and enemy's bullet.
           hero_.Die();
-        } else {
-          // Collision 1, enemy and hero's bullet.
-          int killing_score = 100; // TODO: change to const.
-          hero_.AddScore(killing_score);
         }
         break;
       }
-      case DEATH: {
+      case kDeath: {
         // Bullet is out of screen.
-        Bullet *bullet = dynamic_cast<Bullet *>(game_event->GetParent());
-        std::vector<Bullet *> *bullets; // for needed container.
-        if (bullet->hero()) {
-          bullets = &hero_bullets_;
+        Bullet *bullet = dynamic_cast<Bullet *>(game_event->parent());
+        if (bullet->parent()->bounding_rect().top <
+            theStorage.screen_height() / 2) {
+          // Enemy.
+          EnemyBullet *enemy_bullet = 
+              dynamic_cast<EnemyBullet *>(bullet);
 
+          sf::Vector2i enemy_pos = enemy_bullet->pos_in_table();
+          auto it = std::find(enemies_bullets_.begin(), enemies_bullets_.end(),
+                              enemy_bullet);
+          enemies_bullets_.erase(it);
+          enemies_line_.AllowFire(enemy_pos);
         } else {
-          bullets = &enemies_bullets_;
+          // Hero.
+          
+          auto it = std::find(hero_bullets_.begin(), hero_bullets_.end(),
+                              bullet);
+          hero_bullets_.erase(it);
+          hero_.AllowFire();
+          
         }
-        auto bul_it = std::find(bullets->begin(), bullets->end(),
-                                 bullet);
-        if (bul_it != bullets->end())
-          bullets->erase(bul_it);
-
         delete bullet;
         break;
       }

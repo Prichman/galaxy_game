@@ -5,13 +5,15 @@
 #include "game_event_manager.h"
 #include "storage.h"
 
-static const int verticalMoveTime = 20 * 60;
-static const int rowCount     = 3;
-static const int columnCount  = 10;
+static const int kVerticalMoveTime  = 5 * 60;
+static const int kAttackTime        = 0.5 * 60; // Allow change this
+                                              // to test your skill.
+static const int kRowCount          = 3;
+static const int kColumnCount       = 10;
 
 EnemiesLine::EnemiesLine()
     : vertical_ticker_(0),
-      up(true),
+      up(false),
       moving_left_(true) {  
   bottom_ = theStorage.vmargin() - theStorage.hspace() +
       (theStorage.enemy_size() + theStorage.hspace()) * 3;
@@ -19,8 +21,8 @@ EnemiesLine::EnemiesLine()
 }
 
 EnemiesLine::~EnemiesLine() {
-  for (int i = 0; i < rowCount; ++i) {
-    for (int j = 0; j < columnCount; ++j) {
+  for (int i = 0; i < kRowCount; ++i) {
+    for (int j = 0; j < kColumnCount; ++j) {
       delete enemies_[i][j];
       enemies_[i][j] = nullptr;
     }
@@ -29,48 +31,57 @@ EnemiesLine::~EnemiesLine() {
 }
 
 void EnemiesLine::GameUpdate() {
-  return; // TODO: remove after first test.
 
+  // Vertical move
   ++vertical_ticker_;
-
   // Check if need vertical move.
-  if (vertical_ticker_ == verticalMoveTime) {
+  if (vertical_ticker_ == kVerticalMoveTime) {
     vertical_ticker_ = 0;
     
-    float vspeed = 2.0;
+    float vspeed = 5.0;
     if (up)
       vspeed = -vspeed;
     up = !up;
     bottom_ += vspeed;
    
-    for (int i = 0; i < rowCount; ++i) {
+    for (int i = 0; i < kRowCount; ++i) {
       for (int j = left_enemy_; j <= right_enemy_; ++j) {
         if (enemies_[i][j] != nullptr)
-          enemies_[i][j]->SetSpeed(theStorage.enemy_hspeed(), vspeed);
+          enemies_[i][j]->SetSpeed(enemies_[i][j]->GetSpeed().x, vspeed);
       }
     }
   }
 
+  // Enemies attack
+  ++attack_ticker_;
+
+  if (attack_ticker_ == kAttackTime) {
+    attack_ticker_ = 0;
+    int attacker_x = random() % kColumnCount;
+    int attacker_y = random() % kRowCount;
+    if (enemies_[attacker_y][attacker_x] != nullptr) 
+      enemies_[attacker_y][attacker_x]->Attack();
+  }
+
   // Usual update.
-  // Common behavior.
-  
-  // Check out of 
+  // Common behavior. 
+  // Check out-of-screen moving.
   if (!CanMove()) {
     float enemy_speed = theStorage.enemy_hspeed();
     // Check prev direction of move.
     if (!moving_left_)
       enemy_speed = -enemy_speed;
     moving_left_ = !moving_left_;
-    for (int i = 0; i < rowCount; ++i) {
-      for (int j = left_enemy_; j < right_enemy_; ++j)
+    for (int i = 0; i < kRowCount; ++i) {
+      for (int j = left_enemy_; j <= right_enemy_; ++j)
         if (enemies_[i][j] != nullptr) {
           enemies_[i][j]->SetSpeed(enemy_speed, 0);
         }
     }
   }
   
-  for (int i = 0; i < rowCount; ++i) {
-    for (int j = left_enemy_; j < right_enemy_; ++j) {
+  for (int i = 0; i < kRowCount; ++i) {
+    for (int j = left_enemy_; j <= right_enemy_; ++j) {
       if (enemies_[i][j] != nullptr)
         enemies_[i][j]->GameUpdate();
     }
@@ -81,18 +92,38 @@ float EnemiesLine::GetBottom() const {
   return bottom_;
 }
 
-bool EnemiesLine::KillEnemy(sf::IntRect bullet_rect) { 
+sf::Vector2i EnemiesLine::GetEnemyPos(Enemy *enemy) {
+  for (int i = 0; i < kRowCount; ++i) {
+    for (int j = left_enemy_; j <= right_enemy_; ++j) {
+      if (enemies_[i][j] == enemy)
+        return sf::Vector2i(j, i);
+    }
+  }
+  return sf::Vector2i(-1, -1);
+}
+
+bool EnemiesLine::KillEnemy(sf::FloatRect bullet_rect) { 
   bool result = false;
+
+  Enemy *left_enemy = FindLeft();
 
   // TODO: test this (x,y).
   int y = (bullet_rect.top - theStorage.vmargin()) /
       (theStorage.vspace() + theStorage.enemy_size());
-  int x = (bullet_rect.left - theStorage.hmargin()) /
-      (theStorage.hspace() + theStorage.enemy_size());
+  int x = (bullet_rect.left - left_enemy->bounding_rect().left) /
+      (theStorage.hspace() + left_enemy->bounding_rect().width);
+  
+  if (x < 0 || x > right_enemy_)
+    return false;
 
-  bool inter_left = enemies_[y][x]->GetIntRect().intersects(bullet_rect);
+
+  bool inter_left;
+  if (enemies_[y][x] == nullptr)
+    inter_left = false;
+  else
+    inter_left = enemies_[y][x]->bounding_rect().intersects(bullet_rect);
   if (inter_left) {
-    GameEvent *event = new GameEvent(KILL, nullptr);
+    GameEvent *event = new GameEvent(kKill, nullptr);
     theEventManager.PushEvent(event);
     result = true;
     delete enemies_[y][x];
@@ -100,10 +131,15 @@ bool EnemiesLine::KillEnemy(sf::IntRect bullet_rect) {
   }
 
   // Out of range check.
-  if (x < columnCount - 1 && !result) {
-    bool inter_right = enemies_[y][x + 1]->GetIntRect().intersects(bullet_rect);
+  if (x < kColumnCount - 1 && !result) {
+    bool inter_right;
+    if (enemies_[y][x + 1] == nullptr)
+      inter_right = false;
+    else
+      inter_right =
+          enemies_[y][x + 1]->bounding_rect().intersects(bullet_rect);
     if (inter_right) {
-      GameEvent *event = new GameEvent(KILL, nullptr);
+      GameEvent *event = new GameEvent(kKill, nullptr);
       theEventManager.PushEvent(event); 
       result = true;
       delete enemies_[y][x + 1];
@@ -116,21 +152,26 @@ bool EnemiesLine::KillEnemy(sf::IntRect bullet_rect) {
   return result;
 }
 
+void EnemiesLine::AllowFire(sf::Vector2i pos_in_table) {
+  if (enemies_[pos_in_table.y][pos_in_table.x] != nullptr)
+    enemies_[pos_in_table.y][pos_in_table.x]->AllowFire();
+}
 
 void
 EnemiesLine::draw(sf::RenderTarget &target, sf::RenderStates states) const {
-  for (int i = 0; i < rowCount; ++i) {
-    for (int j = 0; j < columnCount; ++j) {
-      enemies_[i][j]->draw(target, states);
+  for (int i = 0; i < kRowCount; ++i) {
+    for (int j = 0; j < kColumnCount; ++j) {
+      if (enemies_[i][j] != nullptr)
+        enemies_[i][j]->draw(target, states);
     }
   }
 }
 
 
 void EnemiesLine::CreateEnemies() {
-  enemies_.resize(rowCount, std::vector<Enemy *>(columnCount, nullptr));
-  for (int i = 0; i < rowCount; ++i) {
-    for (int j = 0; j < columnCount; ++j) {
+  enemies_.resize(kRowCount, std::vector<Enemy *>(kColumnCount, nullptr));
+  for (int i = 0; i < kRowCount; ++i) {
+    for (int j = 0; j < kColumnCount; ++j) {
       enemies_[i][j] = new Enemy(i, j);
     }
   }
@@ -141,45 +182,49 @@ void EnemiesLine::CreateEnemies() {
 void EnemiesLine::CheckBorders() {
   bool left   = true,
        right  = true;
-  for (int i = 0; i < rowCount; ++i) {
-    if (enemies_[left_enemy_][i] != nullptr)
-      left = false;
+  while (left || right) {
+    left = true;
+    right = true;
+    for (int i = 0; i < kRowCount; ++i) {
+      if (enemies_[i][left_enemy_] != nullptr)
+        left = false;
 
-    if (enemies_[right_enemy_][i] != nullptr)
-      right = false;
-  }
-  if (!left)
-    ++left_enemy_;
-  if (!right)
-    ++right_enemy_;
+      if (enemies_[i][right_enemy_] != nullptr)
+        right = false;
+    }
+    if (left)
+      ++left_enemy_;
+    if (right)
+      --right_enemy_;
 
-  if (left > right) {
-    // TODO: end of game.
+    if (left > right) {
+      // TODO: end of game.
+    }
   }
 }
 
 bool EnemiesLine::CanMove() {
-  return true;
-
   if (moving_left_) {
     Enemy *left_enemy = FindLeft();
     if (left_enemy != nullptr) {
-      if (left_enemy->GetPos().x < theStorage.hmargin())
+      if (left_enemy->GetPos().x < 1)
         return false;
     }
   } else {
-    Enemy *right_enemy = FindLeft();
+    Enemy *right_enemy = FindRight();
     if (right_enemy != nullptr) {
-      if (right_enemy->GetPos().x > 
-          theStorage.screen_width() - theStorage.hmargin())
+      if (right_enemy->GetPos().x + right_enemy->bounding_rect().width > 
+          theStorage.screen_width() - 1)
         return false;
     }
   }
+
+  return true;
 }
 
 
 Enemy *EnemiesLine::FindLeft() {
-  for (int i = 0; i < rowCount; ++i) {
+  for (int i = 0; i < kRowCount; ++i) {
     if (enemies_[i][left_enemy_] != nullptr)
       return enemies_[i][left_enemy_];
   }
@@ -187,7 +232,7 @@ Enemy *EnemiesLine::FindLeft() {
 }
 
 Enemy *EnemiesLine::FindRight() {
-  for (int i = 0; i < rowCount; ++i) {
+  for (int i = 0; i < kRowCount; ++i) {
     if (enemies_[i][right_enemy_] != nullptr)
       return enemies_[i][right_enemy_];
   }

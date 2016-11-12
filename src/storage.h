@@ -17,6 +17,9 @@ class Storage {
 
   int screen_width() const;
   int screen_height() const;
+
+  void Accelerate();
+  void Slow();
   
  protected: 
   Storage();

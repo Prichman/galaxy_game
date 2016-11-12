@@ -8,6 +8,7 @@
 
 class Actor;
 class Bullet;
+class EnemyBullet;
 
 class GameManager {
  public:
@@ -44,7 +45,7 @@ class GameManager {
   sf::Clock clock_;
   sf::Time  elapsed_;
 
-  std::vector<Bullet *> enemies_bullets_;
+  std::vector<EnemyBullet *> enemies_bullets_;
   std::vector<Bullet *> hero_bullets_;
   EnemiesLine           enemies_line_;
   Hero                  hero_;
