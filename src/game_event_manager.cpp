@@ -11,7 +11,8 @@ GameEventManager &GameEventManager::GetInstance() {
   return *manager_;
 }
 
-void GameEventManager::PushEvent(GameEvent *event) {
+void GameEventManager::PushEvent(GameEventType type, Actor *event_parent) {
+  GameEvent *event = new GameEvent(type, event_parent);
   events_.push(event);
 }
 

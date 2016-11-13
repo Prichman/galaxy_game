@@ -1,7 +1,6 @@
 #include "enemies_line.h"
 
 #include "enemy.h"
-#include "game_event.h"
 #include "game_event_manager.h"
 #include "storage.h"
 
@@ -15,9 +14,9 @@ EnemiesLine::EnemiesLine()
     : vertical_ticker_(0),
       up(false),
       moving_left_(true) {  
-  bottom_ = theStorage.vmargin() - theStorage.hspace() +
-      (theStorage.enemy_size() + theStorage.hspace()) * 3;
   CreateEnemies();
+  bottom_ = theStorage.vmargin() - theStorage.hspace() +
+      (FindLeft()->bounding_rect().height + theStorage.hspace()) * 3;
 }
 
 EnemiesLine::~EnemiesLine() {
@@ -109,11 +108,11 @@ bool EnemiesLine::KillEnemy(sf::FloatRect bullet_rect) {
 
   // TODO: test this (x,y).
   int y = (bullet_rect.top - theStorage.vmargin()) /
-      (theStorage.vspace() + theStorage.enemy_size());
-  int x = (bullet_rect.left - left_enemy->bounding_rect().left) /
+      (theStorage.vspace() + left_enemy->bounding_rect().height);
+  int x = left_enemy_ + (bullet_rect.left - left_enemy->bounding_rect().left) /
       (theStorage.hspace() + left_enemy->bounding_rect().width);
   
-  if (x < 0 || x > right_enemy_)
+  if (x < 0 || x > right_enemy_ || y < 0)
     return false;
 
 
@@ -123,8 +122,7 @@ bool EnemiesLine::KillEnemy(sf::FloatRect bullet_rect) {
   else
     inter_left = enemies_[y][x]->bounding_rect().intersects(bullet_rect);
   if (inter_left) {
-    GameEvent *event = new GameEvent(kKill, nullptr);
-    theEventManager.PushEvent(event);
+    theEventManager.PushEvent(kKill, nullptr);
     result = true;
     delete enemies_[y][x];
     enemies_[y][x] = nullptr;
@@ -139,8 +137,7 @@ bool EnemiesLine::KillEnemy(sf::FloatRect bullet_rect) {
       inter_right =
           enemies_[y][x + 1]->bounding_rect().intersects(bullet_rect);
     if (inter_right) {
-      GameEvent *event = new GameEvent(kKill, nullptr);
-      theEventManager.PushEvent(event); 
+      theEventManager.PushEvent(kKill, nullptr);
       result = true;
       delete enemies_[y][x + 1];
       enemies_[y][x + 1] = nullptr;
@@ -170,7 +167,8 @@ EnemiesLine::draw(sf::RenderTarget &target, sf::RenderStates states) const {
 
 void EnemiesLine::CreateEnemies() {
   enemies_.resize(kRowCount, std::vector<Enemy *>(kColumnCount, nullptr));
-  for (int i = 0; i < kRowCount; ++i) {
+  // TODO: change i to 0 before release.
+  for (int i = 2; i < kRowCount; ++i) {
     for (int j = 0; j < kColumnCount; ++j) {
       enemies_[i][j] = new Enemy(i, j);
     }
@@ -197,8 +195,8 @@ void EnemiesLine::CheckBorders() {
     if (right)
       --right_enemy_;
 
-    if (left > right) {
-      // TODO: end of game.
+    if (left_enemy_ > right_enemy_) {
+      theEventManager.PushEvent(kWin, nullptr);
     }
   }
 }

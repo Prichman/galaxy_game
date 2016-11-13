@@ -26,15 +26,12 @@ all : $(target) reloc
 $(target) : $(objects_all)
 	$(CXX) $(LDFLAGS) $^ -o $(target)
 
-attack_actor.o : game_event.h 		\
-								 game_event_manager.h
+attack_actor.o :game_event_manager.h
 
-bullet.o :  game_event.h 				  \
-					  game_event_manager.h  \
+bullet.o :  game_event_manager.h  \
 					  storage.h
 
 enemies_line.o :  enemy.h 							\
-									game_event.h 					\
 									game_event_manager.h 	\
 									storage.h
 
@@ -49,10 +46,10 @@ game_manager.o : 				\
 	enemy_bullet.h 				\
 	keyboard.h 						\
 	game_event_manager.h 	\
-	game_event.h 					\
 	storage.h
 
-hero.o : storage.h
+hero.o : 	game_event_manager.h \
+					storage.h			
 
 main.o : game_manager.h
 

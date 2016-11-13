@@ -2,14 +2,14 @@
 
 #include <stack>
 
-class GameEvent;
+#include "game_event.h"
 
 #define theEventManager GameEventManager::GetInstance()
 
 class GameEventManager {
  public:
   static GameEventManager &GetInstance();
-  void PushEvent(GameEvent *event);
+  void PushEvent(GameEventType type, Actor *event_parent);
   GameEvent *GetEvent();
 
  protected:

@@ -9,7 +9,6 @@
 #include "bullet.h"
 #include "enemy_bullet.h"
 #include "enemy.h"
-#include "game_event.h"
 #include "game_event_manager.h"
 #include "keyboard.h"
 #include "storage.h"
@@ -18,7 +17,9 @@ static const int kFpsSec = 16;
 static const int kKillScore = 100;
 
 GameManager::GameManager()
-    : running_(false) {
+    : game_mode_(kGame),
+      running_(false),
+      win_(false) {
   main_window_.create(sf::VideoMode(theStorage.screen_width(),
                       theStorage.screen_height()), "Galaxy game",
                       sf::Style::Close);
@@ -31,6 +32,7 @@ GameManager::GameManager()
   srand(time(NULL));
 
   LoadBackground();
+  CreateGui();
 }
 
 void GameManager::StartGame() {
@@ -41,11 +43,10 @@ void GameManager::StartGame() {
 
   std::cout << "Game started" << std::endl;
   while (running_) {
-    elapsed_ = clock_.restart();
+    clock_.restart();
 
     HandleEvents();
-    GameUpdate();
-    Render();
+    TickAndRender();
     sleep_time = fps_step - clock_.getElapsedTime();
     if (sleep_time.asMilliseconds() > 0)
       sf::sleep(sleep_time);
@@ -71,10 +72,10 @@ void GameManager::HandleEvents() {
       case sf::Event::KeyPressed:
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape))
           CloseMainWindow();
-        theKeyboard.HandleKeyPress();
+        theKeyboard.HandleKeyPress(event.key.code);
         break;
       case sf::Event::KeyReleased:
-        theKeyboard.HandleKeyRelease();
+        theKeyboard.HandleKeyRelease(event.key.code);
         break;
       default:
         break;
@@ -86,12 +87,22 @@ void GameManager::GameUpdate() {
   // Move phase
   // TODO: change digits to const.
   const float hero_hspeed = 2.f;
-  if (theKeyboard.ShouldMoveLeft()) {
-    hero_.SetSpeed(-hero_hspeed, 0);
-  } else if (theKeyboard.ShouldMoveRight()) {
-    hero_.SetSpeed(hero_hspeed, 0);
-  } else if (theKeyboard.ShouldAttack()) {
-    hero_.Attack();
+  if (!hero_.resurrecting()) {
+    bool need_move_left = theKeyboard.IsPressed(sf::Keyboard::Left);
+    bool need_move_right = theKeyboard.IsPressed(sf::Keyboard::Right);
+    
+
+    if (!(need_move_left && need_move_right)) {
+      if (need_move_left) {
+        hero_.SetSpeed(-hero_hspeed, 0);
+      } else if (need_move_right) {
+        hero_.SetSpeed(hero_hspeed, 0);
+      }
+    }
+
+    if (theKeyboard.IsPressed(sf::Keyboard::Space)) {
+      hero_.Attack();
+    }
   }
 
   // Update all actors.
@@ -112,14 +123,30 @@ void GameManager::GameUpdate() {
   HandleGameEvents(); 
 }
 
+void GameManager::TickAndRender() {
+  main_window_.clear(sf::Color::Black);
+  switch (game_mode_) { 
+    case kStart:
+      break;
+    case kGame:
+      GameUpdate();
+      Render();
+      break;
+    case kEnd:
+      if (win_) {
+        ShowGoodEnding();
+      } else {
+        ShowBadEnding();
+      }
+      break;
+  }
+  main_window_.display();
+}
+
 void GameManager::Render() {
-  main_window_.clear();
-  
   DrawBackground();
   DrawActors();
   DrawGui();
-
-  main_window_.display();
 }
 
 
@@ -149,19 +176,20 @@ void GameManager::FindCollisions() {
   }
 
   // 2. Hero and enemy's bullet.
-  sf::FloatRect hero_rect = hero_.bounding_rect();
-  for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it) {
-    sf::FloatRect enemy_rect = (*it)->bounding_rect();
-    if (hero_rect.intersects(enemy_rect)) {
-      GameEvent *event = new GameEvent(kKill, &hero_);
-      theEventManager.PushEvent(event); 
-      delete *it;
-      *it = nullptr;
-      enemies_bullets_.erase(it);
+  if (!hero_.resurrecting()) {
+    sf::FloatRect hero_rect = hero_.bounding_rect();
+    for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it) {
+      sf::FloatRect enemy_rect = (*it)->bounding_rect();
+      if (hero_rect.intersects(enemy_rect)) {
+        theEventManager.PushEvent(kKill, &hero_); 
+        delete *it;
+        *it = nullptr;
+        enemies_bullets_.erase(it);
 
-      break;
+        break;
+      }
     }
-  }  
+  }
 }
 
 void GameManager::HandleGameEvents() {
@@ -171,11 +199,12 @@ void GameManager::HandleGameEvents() {
       case kAttack: {
         // Create bullet.
         sf::FloatRect actor_rect = game_event->parent()->bounding_rect(); 
-        bool is_enemy = (dynamic_cast<Hero *>(game_event->parent()) ==
-                         nullptr);
+        bool is_enemy =
+            dynamic_cast<Hero *>(game_event->parent()) == nullptr;
         if (is_enemy) {
           Enemy *enemy = dynamic_cast<Enemy *>(game_event->parent());
           sf::Vector2i enemy_pos = enemies_line_.GetEnemyPos(enemy);
+          
           EnemyBullet *bullet = new EnemyBullet(actor_rect, enemy, enemy_pos);
           enemies_bullets_.push_back(bullet);
         } else {
@@ -200,13 +229,12 @@ void GameManager::HandleGameEvents() {
       case kDeath: {
         // Bullet is out of screen.
         Bullet *bullet = dynamic_cast<Bullet *>(game_event->parent());
-        if (bullet->parent()->bounding_rect().top <
-            theStorage.screen_height() / 2) {
+        EnemyBullet *enemy_bullet =
+            dynamic_cast<EnemyBullet *>(game_event->parent());
+        bool is_enemy = enemy_bullet != nullptr;
+        if (is_enemy) {
           // Enemy.
-          EnemyBullet *enemy_bullet = 
-              dynamic_cast<EnemyBullet *>(bullet);
-
-          sf::Vector2i enemy_pos = enemy_bullet->pos_in_table();
+          sf::Vector2i enemy_pos    = enemy_bullet->pos_in_table();
           auto it = std::find(enemies_bullets_.begin(), enemies_bullets_.end(),
                               enemy_bullet);
           enemies_bullets_.erase(it);
@@ -214,13 +242,35 @@ void GameManager::HandleGameEvents() {
         } else {
           // Hero.
           
-          auto it = std::find(hero_bullets_.begin(), hero_bullets_.end(),
-                              bullet);
-          hero_bullets_.erase(it);
+          auto it = 
+              std::find(hero_bullets_.begin(), hero_bullets_.end(), bullet);
+          if (it != hero_bullets_.end()) {
+              hero_bullets_.erase(it);
+          } else {
+            std::cout << "Hello, I'm bug!" << std::endl;
+            EnemyBullet *enemy_bullet = dynamic_cast<EnemyBullet *>(bullet);
+            if (enemy_bullet != nullptr) {
+              std::cout << "My real father is your enemy :<" << std::endl;
+              sf::Vector2i pos_in_table = enemy_bullet->pos_in_table();
+              std::cout << "Its coordinates: x = " << pos_in_table.x <<
+                           ", y = " << pos_in_table.y << std::endl;
+            }
+          }
           hero_.AllowFire();
-          
         }
         delete bullet;
+        break;
+      }
+      case kLoss: {
+        // asd;
+        win_ = false;
+        game_mode_ = kEnd;
+        break;
+      }
+      case kWin:{
+        // asd;
+        win_ = true;
+        game_mode_ = kEnd;
         break;
       }
     }
@@ -237,26 +287,132 @@ void GameManager::LoadBackground() {
   background_.setTexture(background_texture_);
 }
 
+void GameManager::LoadFont() {
+  if (!font_.loadFromFile("resources/my_font.ttf"))
+    std::cout << "Can't load font" << std::endl;
+}
+
+void GameManager::CreateGui() {
+  LoadFont();
+
+  text_.setFont(font_);
+  text_.setCharacterSize(24);
+  text_.setColor(sf::Color::White);
+
+  // Calculation gui elements' positions.
+  float lives_width;
+  float score_width;
+  const float kConst = 20;
+
+  lives_first_x_ = 2;
+  
+  text_.setString("lives");
+  lives_width = text_.getGlobalBounds().width;
+  text_.setString("score");
+  score_width = text_.getGlobalBounds().width;
+
+  lives_second_x_ = theStorage.screen_width() - lives_width - lives_first_x_;
+
+  score_first_x_ = lives_first_x_ + lives_width + kConst;
+  score_second_x_ = lives_second_x_ - (score_width + kConst);
+
+  // Loading heart sprite.
+  if (!heart_texture_.loadFromFile("resources/heart.png")) {
+    std::cout << "Can't load heart texture" << std::endl;
+    return;
+  }
+  heart_sprite_.setTexture(heart_texture_);
+  heart_sprite_.scale(1.4, 1.4);
+}
+
 void GameManager::DrawBackground() {
   main_window_.draw(background_);
 }
 
 void GameManager::DrawActors() {
-  main_window_.draw(hero_);
-  main_window_.draw(enemies_line_);
   for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it)
     main_window_.draw(**it);
   for (auto it = hero_bullets_.begin(); it != hero_bullets_.end(); ++it)
     main_window_.draw(**it);
+  main_window_.draw(hero_);
+  main_window_.draw(enemies_line_);
 }
 
 void GameManager::DrawGui() {
-  // TODO: 
+  DrawFirstLineGui();
+  DrawSecondLineGui();
+}
+
+void GameManager::DrawFirstLineGui() {
+  float y = 2;
+
+  // 1st player.
+  text_.setString("lives");
+  text_.setPosition(lives_first_x_, y); 
+  main_window_.draw(text_);
+ 
+  text_.setPosition(score_first_x_, y);
+  text_.setString("score");
+  main_window_.draw(text_);
+ 
+  // 2nd player.
+  text_.setString("lives");
+  text_.setPosition(lives_second_x_, y);
+  main_window_.draw(text_);
+
+  text_.setString("score");
+  text_.setPosition(score_second_x_, y);
+  main_window_.draw(text_);
+}
+
+void GameManager::DrawSecondLineGui() {
+  const int hmargin = 10;
+  const int y = 40;
+  const float offset_x = hmargin + heart_sprite_.getGlobalBounds().width;
+  int lives_count = hero_.GetLivesCount();
+  
+  heart_sprite_.setPosition(2, y);
+  for (int i = 0; i < lives_count; ++i) {
+    main_window_.draw(heart_sprite_);
+    heart_sprite_.move(offset_x, 0);
+  }
+  
+  sf::Uint32 score = hero_.GetScore();
+  text_.setString(std::to_string(score));
+  text_.setPosition(score_first_x_, y - 10);
+
+  main_window_.draw(text_);
+  // TODO: add second player.
+}
+
+void GameManager::ShowStartScreen() {
+
+}
+
+void GameManager::ShowGoodEnding() {
+  
+}
+
+void GameManager::ShowBadEnding() {
+  float y;
+  
+  text_.setCharacterSize(50);
+  text_.setString("Game over");
+  y = theStorage.screen_height() / 2 - text_.getGlobalBounds().height;
+  text_.setPosition(
+      (theStorage.screen_width() - text_.getGlobalBounds().width) / 2, y);
+  main_window_.draw(text_);
+
+  text_.setCharacterSize(24);
+  text_.setString("Press Esc to exit");
+  text_.setPosition(
+      (theStorage.screen_width() - text_.getGlobalBounds().width) / 2, y + 50);
+  main_window_.draw(text_);
 }
 
 
 void GameManager::CloseMainWindow() {
   main_window_.close();
-  running_ = false;
+  running_    = false;
   std::cout << "Game ended" << std::endl;
 }

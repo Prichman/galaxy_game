@@ -5,8 +5,9 @@
 class AttackActor : public Actor {
  public:
   AttackActor();
+  virtual ~AttackActor();
 
-  void Attack();
+  virtual void Attack();
 
   void AllowFire();
   bool CanFire() const;

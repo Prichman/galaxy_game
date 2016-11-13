@@ -11,12 +11,12 @@ Storage &Storage::GetInstance() {
   
 Storage::Storage()
     : hmargin_(160),
-      vmargin_(30),
-      enemy_size_(30),
+      vmargin_(60),
+      hero_vmargin_(30),
       hspace_(20),
       vspace_(20),
       enemy_hspeed_(16.f / 16.f),
-      bullet_vspeed_(3.f),
+      bullet_vspeed_(3.5f),
       screen_width_(800),
       screen_height_(600) {
   // TODO: test the constants  
@@ -30,8 +30,8 @@ int Storage::vmargin() const {
   return vmargin_;
 }
 
-int Storage::enemy_size() const {
-  return enemy_size_;
+int Storage::hero_vmargin() const {
+  return hero_vmargin_;
 }
 
 int Storage::hspace() const {

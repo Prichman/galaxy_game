@@ -5,7 +5,9 @@ class Actor;
 enum GameEventType {
   kAttack,
   kKill,
-  kDeath
+  kDeath,
+  kLoss,
+  kWin
 };
 
 class GameEvent {

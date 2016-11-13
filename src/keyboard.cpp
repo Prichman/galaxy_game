@@ -2,42 +2,28 @@
 
 #include <SFML/Window/Keyboard.hpp>
 
-Keyboard *Keyboard::_keyboard = nullptr;
+Keyboard *Keyboard::keyboard_ = nullptr;
 
-Keyboard::Keyboard() : current_action_(ACT_NO) {}
+Keyboard::Keyboard() {}
 
 Keyboard &Keyboard::GetInstance() {
-  if (_keyboard == nullptr)
-    _keyboard = new Keyboard;
+  if (keyboard_ == nullptr)
+    keyboard_ = new Keyboard;
 
-  return *_keyboard;
+  return *keyboard_;
 }
 
 
-void Keyboard::HandleKeyPress() {
-  if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {
-    current_action_ = ACT_MOVE_LEFT;
-  } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
-    current_action_ = ACT_MOVE_RIGHT;
-  } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)) {
-    current_action_ = ACT_ATTACK;
-  } else {
-    current_action_ = ACT_NO;
-  }
+void Keyboard::HandleKeyPress(sf::Keyboard::Key key) {
+  keys_pressed_.insert(key);
 }
 
-void Keyboard::HandleKeyRelease() {
-  current_action_ = ACT_NO;
+void Keyboard::HandleKeyRelease(sf::Keyboard::Key key) {
+  auto it = keys_pressed_.find(key);
+  if (it != keys_pressed_.end())
+    keys_pressed_.erase(it);
 }
 
-bool Keyboard::ShouldAttack() const {
-  return current_action_ == ACT_ATTACK;
-}
-
-bool Keyboard::ShouldMoveLeft()  const {
-  return current_action_ == ACT_MOVE_LEFT;
-}
-
-bool Keyboard::ShouldMoveRight() const {
-  return current_action_ == ACT_MOVE_RIGHT;
+bool Keyboard::IsPressed(sf::Keyboard::Key key) {
+  return keys_pressed_.find(key) != keys_pressed_.end();
 }

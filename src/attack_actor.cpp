@@ -1,16 +1,16 @@
 #include "attack_actor.h"
 
-#include "game_event.h"
 #include "game_event_manager.h"
 
 AttackActor::AttackActor() : can_fire_(true) {}
+
+AttackActor::~AttackActor() {}
 
 void AttackActor::Attack() {
   if (!CanFire())
     return;
 
-  GameEvent *event = new GameEvent(kAttack, this);
-  theEventManager.PushEvent(event);
+  theEventManager.PushEvent(kAttack, this);
   can_fire_ = false;
 }
 

@@ -8,7 +8,7 @@ class Storage {
   
   int hmargin()       const;
   int vmargin()       const;
-  int enemy_size()    const;
+  int hero_vmargin()  const;
   int hspace()        const;
   int vspace()        const;
   
@@ -29,7 +29,7 @@ class Storage {
 
   int hmargin_;
   int vmargin_;
-  int enemy_size_;
+  int hero_vmargin_;
   int hspace_;
   int vspace_;
 

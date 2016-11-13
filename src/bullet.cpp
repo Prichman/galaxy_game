@@ -1,10 +1,9 @@
 #include "bullet.h"
 
-#include "game_event.h"
 #include "game_event_manager.h"
 #include "storage.h"
 
-Bullet::Bullet(const sf::FloatRect &actor_rect, Actor *parent)
+  Bullet::Bullet(const sf::FloatRect &actor_rect, Actor *parent)
     : parent_(parent) {
   LoadSprite("resources/bullet.png");
 
@@ -14,7 +13,8 @@ Bullet::Bullet(const sf::FloatRect &actor_rect, Actor *parent)
   x = actor_rect.left + (actor_rect.width - own_rect.width) / 2;
   // Check if parent is Enemy. Enemies are placed in 
   // first height half of screen.
-  if (actor_rect.top < theStorage.screen_height() / 2) {
+  if ((actor_rect.top - actor_rect.height) <
+      (theStorage.screen_height() / 2)) {
     // Enemy.
     y = actor_rect.top + actor_rect.height + own_rect.height;
   } else {
@@ -26,6 +26,8 @@ Bullet::Bullet(const sf::FloatRect &actor_rect, Actor *parent)
   SetSpeed(0, vspeed);
 }
 
+Bullet::~Bullet() {}
+
 void Bullet::GameUpdate() {
   Actor::GameUpdate();
 
@@ -33,8 +35,7 @@ void Bullet::GameUpdate() {
   // Check if bullet is out of screen.
   if (pos.y > theStorage.screen_height() ||
       pos.y < 0) {
-    GameEvent *event = new GameEvent(kDeath, static_cast<Actor *>(this));
-    theEventManager.PushEvent(event);
+    theEventManager.PushEvent(kDeath, this);
   }
 }
 
