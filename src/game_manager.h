@@ -2,6 +2,8 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <vector>
+
 #include "actor.h"
 #include "enemies_line.h"
 #include "hero.h"
@@ -19,6 +21,7 @@ class EnemyBullet;
 class GameManager {
  public:
   GameManager();
+  ~GameManager();
 
   void StartGame();
   void Pause();
@@ -47,6 +50,8 @@ class GameManager {
   void ShowStartScreen();
   void ShowGoodEnding();
   void ShowBadEnding();
+
+  void CleanUp();
 
   void CloseMainWindow();
 

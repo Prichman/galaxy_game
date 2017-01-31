@@ -3,7 +3,7 @@
 #include "attack_actor.h"
 
 class Enemy : public AttackActor {
- friend class EnemiesLine;
+  friend class EnemiesLine;
   
  public:
   Enemy(int row, int pos_num);

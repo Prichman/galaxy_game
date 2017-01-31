@@ -6,7 +6,7 @@
 #include "game_event_manager.h"
 #include "storage.h"
 
-static const int kLivesCount    = 1;
+static const int kLivesCount    = 3;
 static const int kRestoreTime   = 3 * 60;
 static const int kInvisibleTime = 1 * 60;
 static const int dt             = 16;
@@ -16,12 +16,13 @@ Hero::Hero()
       score_(0),
       restore_(false),
       invisible_ticker_(-1) {
-   LoadSprite("resources/hero_1.png");
-   LoadAdditionalSprite();
-   current_sprite_ = &sprite_;
+  LoadSprite("resources/hero_1.png");
+  LoadAdditionalSprite();
+  current_sprite_ = &sprite_;
 
-   SetPos((theStorage.screen_width() - bounding_rect().width) / 2,
-          theStorage.screen_height() - theStorage.hero_vmargin());
+  starting_pos_.x = theStorage.screen_width() / 4 - bounding_rect().width / 2;
+  starting_pos_.y = theStorage.screen_height() - theStorage.hero_vmargin();
+  SetPos(starting_pos_.x, starting_pos_.y);
 }
 
 void Hero::GameUpdate() {
@@ -31,6 +32,7 @@ void Hero::GameUpdate() {
     if (restore_time_ <= 0) {
       restore_ = false;
       current_sprite_ = &sprite_;
+      SetPos(starting_pos_.x, starting_pos_.y);
     }
   }
   

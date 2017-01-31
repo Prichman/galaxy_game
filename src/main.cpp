@@ -1,7 +1,3 @@
-#include <iostream>
-
-using namespace std;
-
 #include <SFML/Graphics.hpp>
 
 #include "game_manager.h"
@@ -9,6 +5,9 @@ using namespace std;
 int main() {
   GameManager *manager = new GameManager;
   manager->StartGame();
+
+  delete manager;
+  manager = nullptr;
 
   return 0;
 }

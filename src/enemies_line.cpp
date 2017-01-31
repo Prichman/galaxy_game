@@ -12,6 +12,7 @@ static const int kColumnCount       = 10;
 
 EnemiesLine::EnemiesLine()
     : vertical_ticker_(0),
+      attack_ticker_(0),
       up(false),
       moving_left_(true) {  
   CreateEnemies();
@@ -106,7 +107,6 @@ bool EnemiesLine::KillEnemy(sf::FloatRect bullet_rect) {
 
   Enemy *left_enemy = FindLeft();
 
-  // TODO: test this (x,y).
   int y = (bullet_rect.top - theStorage.vmargin()) /
       (theStorage.vspace() + left_enemy->bounding_rect().height);
   int x = left_enemy_ + (bullet_rect.left - left_enemy->bounding_rect().left) /
@@ -167,8 +167,7 @@ EnemiesLine::draw(sf::RenderTarget &target, sf::RenderStates states) const {
 
 void EnemiesLine::CreateEnemies() {
   enemies_.resize(kRowCount, std::vector<Enemy *>(kColumnCount, nullptr));
-  // TODO: change i to 0 before release.
-  for (int i = 2; i < kRowCount; ++i) {
+  for (int i = 0; i < kRowCount; ++i) {
     for (int j = 0; j < kColumnCount; ++j) {
       enemies_[i][j] = new Enemy(i, j);
     }

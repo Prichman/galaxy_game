@@ -63,6 +63,6 @@ reloc :
 	cp -r resources ../build
 
 clean :
-	-rm -rf ../build $(objects_all)
+	-rm -rf ../build *.o
 
 .PHONY : clean reloc

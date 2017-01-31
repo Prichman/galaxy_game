@@ -35,6 +35,10 @@ GameManager::GameManager()
   CreateGui();
 }
 
+GameManager::~GameManager() {
+  CleanUp();
+}
+
 void GameManager::StartGame() {
   sf::Time sleep_time;
   const sf::Time fps_step = sf::milliseconds(kFpsSec);
@@ -108,12 +112,11 @@ void GameManager::GameUpdate() {
   // Update all actors.
   hero_.GameUpdate();
   enemies_line_.GameUpdate();
-  for (auto it = hero_bullets_.begin(); it != hero_bullets_.end(); ++it) {
-    (*it)->GameUpdate();
-  }
-  for (auto it = enemies_bullets_.begin(); it != enemies_bullets_.end(); ++it) {
-    (*it)->GameUpdate();
-  }
+  for (auto *bullet : hero_bullets_)
+     bullet->GameUpdate();
+
+  for (auto *bullet : enemies_bullets_)
+     bullet->GameUpdate();
 
   // Collision phase.
   // If found create event and remove bullet.
@@ -297,7 +300,7 @@ void GameManager::CreateGui() {
 
   text_.setFont(font_);
   text_.setCharacterSize(24);
-  text_.setColor(sf::Color::White);
+  text_.setFillColor(sf::Color::White);
 
   // Calculation gui elements' positions.
   float lives_width;
@@ -390,7 +393,27 @@ void GameManager::ShowStartScreen() {
 }
 
 void GameManager::ShowGoodEnding() {
+  // TODO: change this.
+  float y;
   
+  text_.setCharacterSize(50);
+  text_.setString("You win!");
+  y = theStorage.screen_height() / 2 - text_.getGlobalBounds().height;
+  text_.setPosition(
+      (theStorage.screen_width() - text_.getGlobalBounds().width) / 2, y);
+  main_window_.draw(text_);
+
+  text_.setCharacterSize(24);
+  text_.setString("Your score: " + std::to_string(hero_.GetScore()));
+  text_.setPosition(
+      (theStorage.screen_width() - text_.getGlobalBounds().width) / 2, y + 50);
+  main_window_.draw(text_); 
+
+  
+  text_.setString("Press Esc to exit");
+  text_.setPosition(
+      (theStorage.screen_width() - text_.getGlobalBounds().width) / 2, y + 80);
+  main_window_.draw(text_); 
 }
 
 void GameManager::ShowBadEnding() {
@@ -410,9 +433,20 @@ void GameManager::ShowBadEnding() {
   main_window_.draw(text_);
 }
 
+void GameManager::CleanUp() {
+  for (auto *bullet : enemies_bullets_) {
+    delete bullet;
+    bullet = nullptr;
+  }
+  for (auto *bullet : hero_bullets_) {
+    delete bullet;
+    bullet = nullptr;
+  }
+}
 
 void GameManager::CloseMainWindow() {
   main_window_.close();
   running_    = false;
+
   std::cout << "Game ended" << std::endl;
 }

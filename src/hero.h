@@ -29,6 +29,7 @@ class Hero : public AttackActor {
 
   sf::Int32 lives_count_;
   sf::Uint32 score_;
+  sf::Vector2f starting_pos_;
 
   bool restore_;
   int restore_time_;

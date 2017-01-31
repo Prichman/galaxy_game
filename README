@@ -1,0 +1,11 @@
+Simple galaxy game without any graphics effects. This projects has been done
+only to pass the lab.
+
+Build
+================
+Type make in current directory.
+
+Run
+================
+1. Move to ./build directory;
+2. Execute ./galaxy_game.
