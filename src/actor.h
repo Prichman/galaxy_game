@@ -14,7 +14,7 @@ class Actor : public sf::Drawable {
 
   virtual void GameUpdate();
   
-  void LoadSprite(const std::string & path);
+  void LoadSprite(const std::string &path);
 
   void SetPos(float x, float y);
   sf::Vector2f GetPos() const;

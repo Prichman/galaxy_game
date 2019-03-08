@@ -9,7 +9,7 @@ Actor::~Actor() {
 
 }
 
-void Actor::LoadSprite(const std::string & path) {
+void Actor::LoadSprite(const std::string &path) {
   if(!texture_.loadFromFile(path)) {
     std::cout << "Can't load texture from \"" << path << "\"" << std::endl;
     return;

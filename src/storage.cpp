@@ -15,12 +15,10 @@ Storage::Storage()
       hero_vmargin_(30),
       hspace_(20),
       vspace_(20),
-      enemy_hspeed_(16.f / 16.f),
+      enemy_hspeed_(1.0f),
       bullet_vspeed_(3.5f),
       screen_width_(800),
-      screen_height_(600) {
-  // TODO: test the constants  
-}
+      screen_height_(600) { }
 
 int Storage::hmargin() const {
   return hmargin_;

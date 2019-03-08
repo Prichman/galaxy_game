@@ -4,8 +4,9 @@
 #include "game_event_manager.h"
 #include "storage.h"
 
-static const int kVerticalMoveTime  = 5 * 60;
-static const int kAttackTime        = 0.5 * 60; // Allow change this
+static const int kFPS = 60;
+static const int kVerticalMoveTime  = 5   * kFPS;
+static const int kAttackTime        = 0.5 * kFPS; // Allow change this
                                               // to test your skill.
 static const int kRowCount          = 3;
 static const int kColumnCount       = 10;
@@ -34,13 +35,13 @@ void EnemiesLine::GameUpdate() {
 
   // Vertical move
   ++vertical_ticker_;
+
   // Check if need vertical move.
   if (vertical_ticker_ == kVerticalMoveTime) {
     vertical_ticker_ = 0;
     
     float vspeed = 5.0;
-    if (up)
-      vspeed = -vspeed;
+    if (up) vspeed = -vspeed;
     up = !up;
     bottom_ += vspeed;
    
@@ -154,8 +155,7 @@ void EnemiesLine::AllowFire(sf::Vector2i pos_in_table) {
     enemies_[pos_in_table.y][pos_in_table.x]->AllowFire();
 }
 
-void
-EnemiesLine::draw(sf::RenderTarget &target, sf::RenderStates states) const {
+void EnemiesLine::draw(sf::RenderTarget &target, sf::RenderStates states) const {
   for (int i = 0; i < kRowCount; ++i) {
     for (int j = 0; j < kColumnCount; ++j) {
       if (enemies_[i][j] != nullptr)

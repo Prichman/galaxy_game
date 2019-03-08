@@ -60,7 +60,7 @@ $(objects) main.o : %.o : %.cpp
 reloc : 
 	mkdir -p ../build
 	mv $(target) ../build
-	cp -r resources ../build
+	cp -r ../resources ../build
 
 clean :
 	-rm -rf ../build *.o
